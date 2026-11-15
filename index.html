@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Wochenplan</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary: #4f46e5;
+      --secondary-hover: #4338ca;
+      --success: #16a34a;
+      --success-hover: #15803d;
+      --marco-bg: #dbeafe;
+      --marco-border: #93c5fd;
+      --marco-text: #1e3a8a;
+      --julia-bg: #ffedd5;
+      --julia-border: #fdba74;
+      --julia-text: #9a3412;
+      --tbd-bg: #f1f5f9;
+      --tbd-border: #cbd5e1;
+      --tbd-text: #475569;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding-bottom: 40px;
+    }
+
+    /* Setup / Cloud Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .modal-card h2 {
+      margin: 0 0 6px;
+      font-size: 1.3rem;
+      color: var(--text);
+    }
+
+    .modal-card p {
+      margin: 0 0 16px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+      color: var(--text);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.92rem;
+    }
+
+    .form-group small {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 0.94rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-ghost {
+      width: 100%;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { background: #e2e8f0; color: var(--text); }
+
+    .auth-error {
+      color: #dc2626;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 10px;
+      display: none;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: #ffffff;
+      padding: 18px 16px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    }
+
+    .header-top {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .deadline-badge {
+      font-size: 0.76rem;
+      background: rgba(255,255,255,0.14);
+      padding: 5px 10px;
+      border-radius: 999px;
+      color: #f8fafc;
+    }
+
+    .icon-btn {
+      background: rgba(255,255,255,0.14);
+      border: none;
+      color: #ffffff;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.24); }
+
+    .controls-bar {
+      max-width: 1100px;
+      margin: 14px auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kw-selector-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      padding: 6px 12px;
+      border-radius: 10px;
+      flex: 1 1 260px;
+    }
+
+    .kw-selector-wrap label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    select.kw-select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text);
+      background: #ffffff;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(0,0,0,0.25);
+      padding: 4px;
+      border-radius: 10px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 18px auto 0;
+      padding: 0 14px;
+    }
+
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .pill {
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .pill-marco { background: var(--marco-bg); color: var(--marco-text); }
+    .pill-julia { background: var(--julia-bg); color: var(--julia-text); }
+    .pill-tbd { background: var(--tbd-bg); color: var(--tbd-text); }
+
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .save-btn {
+      background: var(--success);
+      color: #ffffff;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+    .save-btn:hover { background: var(--success-hover); }
+
+    .sync-btn {
+      background: #f8fafc;
+      color: var(--text);
+      border: 1px solid #cbd5e1;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .sync-btn:hover { background: #e2e8f0; }
+
+    .save-status {
+      font-size: 0.78rem;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .reset-btn:hover { background: #f8fafc; color: var(--text); }
+
+    /* Planen View */
+    .days-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 14px;
+    }
+
+    .day-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .day-header {
+      background: #f8fafc;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 0.98rem;
+    }
+
+    .day-date {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    .task-list {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .task-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .task-row.assigned-Marco {
+      background-color: var(--marco-bg);
+      border-color: var(--marco-border);
+    }
+    .task-row.assigned-Julia {
+      background-color: var(--julia-bg);
+      border-color: var(--julia-border);
+    }
+    .task-row.assigned-tbd {
+      background-color: #ffffff;
+    }
+
+    .task-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .task-select {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.88rem;
+      font-weight: 600;
+      background: #ffffff;
+      color: var(--text);
+      min-width: 96px;
+      cursor: pointer;
+    }
+
+    /* Übersicht View */
+    .overview-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+    .swatch.marco { background: var(--marco-bg); }
+    .swatch.julia { background: var(--julia-bg); }
+    .swatch.tbd { background: var(--tbd-bg); }
+
+    .export-btn {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+      transition: background 0.15s ease;
+    }
+    .export-btn:hover { background: var(--primary-hover); }
+
+    .jpg-btn {
+      background: var(--secondary);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+    .jpg-btn:hover { background: var(--secondary-hover); }
+
+    .table-wrapper {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      padding: 16px;
+    }
+
+    .pdf-header-info {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 2px solid #1e293b;
+      padding-bottom: 6px;
+    }
+
+    .pdf-header-info h2 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+
+    table.overview-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      font-size: 0.85rem;
+    }
+
+    table.overview-table th,
+    table.overview-table td {
+      border: 1px solid #cbd5e1;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    table.overview-table th {
+      background: #1e293b;
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    table.overview-table th.task-col,
+    table.overview-table td.task-col {
+      text-align: left;
+      font-weight: 600;
+      background: #f8fafc;
+      color: var(--text);
+      min-width: 155px;
+      position: sticky;
+      left: 0;
+      z-index: 2;
+    }
+
+    td.cell-Marco {
+      background-color: var(--marco-bg) !important;
+      color: var(--marco-text);
+      font-weight: 700;
+    }
+
+    td.cell-Julia {
+      background-color: var(--julia-bg) !important;
+      color: var(--julia-text);
+      font-weight: 700;
+    }
+
+    td.cell-tbd {
+      background-color: var(--tbd-bg);
+      color: var(--tbd-text);
+    }
+
+    td.cell-empty {
+      background-color: #ffffff;
+      color: #cbd5e1;
+    }
+
+    .export-mode {
+      width: 1040px !important;
+      max-width: 1040px !important;
+      padding: 14px 16px !important;
+      border: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+      background: #ffffff !important;
+    }
+    .export-mode table.overview-table {
+      min-width: 100% !important;
+      width: 100% !important;
+      font-size: 0.8rem !important;
+    }
+    .export-mode table.overview-table th,
+    .export-mode table.overview-table td {
+      padding: 5px 6px !important;
+    }
+    .export-mode td.task-col,
+    .export-mode th.task-col {
+      position: static !important;
+    }
+
+    .hidden { display: none !important; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media print {
+      header, .overview-actions, .stats-bar, .toast, .modal-overlay { display: none !important; }
+      body { background: #ffffff; padding: 0; }
+      main { margin: 0; max-width: 100%; padding: 0; }
+      .table-wrapper { border: none; padding: 0; overflow: visible; }
+      table.overview-table { font-size: 0.8rem; }
+      table.overview-table th, table.overview-table td { padding: 5px 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- CLOUD-SYNC SETUP MODAL (JSONbin.io) -->
+<div class="modal-overlay hidden" id="setupModal">
+  <div class="modal-card">
+    <h2>☁️ Cloud-Sync einrichten</h2>
+    <p>Verbinde die App einmalig mit eurer kostenlosen JSONbin.io-Bin, damit Änderungen zwischen Julia und Marco synchronisiert werden.</p>
+
+    <div class="form-group">
+      <label for="binIdInput">JSONbin Bin ID</label>
+      <input type="text" id="binIdInput" placeholder="z. B. 67a1b2c3d4e5f6..." autocomplete="off" />
+      <small>Die ID eures erstellten Bins auf jsonbin.io.</small>
+    </div>
+
+    <div class="form-group">
+      <label for="apiKeyInput">JSONbin X-Master-Key (optional, falls Bin privat ist)</label>
+      <input type="password" id="apiKeyInput" placeholder="$2a$10$..." autocomplete="off" />
+      <small>Bei einem öffentlichen Bin leer lassen; bei einem privaten Bin den Master-Key eintragen.</small>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="saveCloudBtn" onclick="connectJsonBin()">Verbinden &amp; synchronisieren</button>
+      <button class="btn-ghost" onclick="closeSetupModal()">Ohne Cloud-Sync (nur lokal) nutzen</button>
+    </div>
+    <div class="auth-error" id="setupError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-top">
+    <h1>Wochenplan</h1>
+    <div class="header-actions">
+      <span class="deadline-badge">Deadline: Sonntag 18:00 Uhr</span>
+      <button class="icon-btn" onclick="openSetupModal()" title="Cloud-Sync verwalten">⚙️ Cloud-Sync</button>
+    </div>
+  </div>
+  <div class="controls-bar">
+    <div class="kw-selector-wrap">
+      <label for="kwSelect">Kalenderwoche:</label>
+      <select id="kwSelect" class="kw-select"></select>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabPlan" onclick="switchTab('plan')">Planen</button>
+      <button class="tab-btn" id="tabOverview" onclick="switchTab('overview')">Übersicht</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="stats-bar">
+    <div class="pills" id="statsPills"></div>
+    <div class="action-group">
+      <span class="save-status" id="saveStatus">Lokal bereit</span>
+      <button class="sync-btn" onclick="syncFromCloud(true)">🔄 Aktualisieren</button>
+      <button class="save-btn" onclick="syncToCloud(true)">💾 Speichern</button>
+      <button class="reset-btn" onclick="resetCurrentWeek()">Zurücksetzen</button>
+    </div>
+  </div>
+
+  <!-- VIEW: PLANEN -->
+  <section id="viewPlan">
+    <div class="days-grid" id="daysGrid"></div>
+  </section>
+
+  <!-- VIEW: ÜBERSICHT -->
+  <section id="viewOverview" class="hidden">
+    <div class="overview-actions">
+      <div class="legend">
+        <span class="legend-item"><span class="swatch marco"></span> Marco</span>
+        <span class="legend-item"><span class="swatch julia"></span> Julia</span>
+        <span class="legend-item"><span class="swatch tbd"></span> tbd.</span>
+      </div>
+      <div class="action-group">
+        <button class="sync-btn" onclick="syncFromCloud(true)">🔄 Aktualisieren</button>
+        <button class="save-btn" onclick="syncToCloud(true)">💾 Speichern</button>
+        <button class="export-btn" onclick="downloadPDF()">
+          <span>📄 PDF Export</span>
+        </button>
+        <button class="export-btn jpg-btn" onclick="downloadJPG()">
+          <span>🖼️ jpg Export</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrapper" id="exportArea">
+      <div class="pdf-header-info">
+        <h2 id="overviewTitle">Wochenplan</h2>
+        <span id="overviewSubtitle" style="font-size:0.88rem; color:#475569;"></span>
+      </div>
+      <table class="overview-table" id="overviewTable"></table>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast">✓ Gespeichert!</div>
+
+<script>
+  const WEEKDAY_TASKS = [
+    "Kinder fertig machen",
+    "Emmi Morgens",
+    "Louisa bringen",
+    "Ben bringen",
+    "Emmi Abends",
+    "Louisa holen",
+    "Ben holen",
+    "Abendessen machen",
+    "Ben ins Bett",
+    "Louisa ins Bett"
+  ];
+
+  const WEEKEND_TASKS = [
+    "Ben ins Bett",
+    "Louisa ins Bett"
+  ];
+
+  const ALL_UNIQUE_TASKS = [
+    "Kinder fertig machen",
+    "Emmi Morgens",
+    "Louisa bringen",
+    "Ben bringen",
+    "Emmi Abends",
+    "Louisa holen",
+    "Ben holen",
+    "Abendessen machen",
+    "Ben ins Bett",
+    "Louisa ins Bett"
+  ];
+
+  const DAYS = [
+    { key: "Mo", name: "Montag", isWeekend: false },
+    { key: "Di", name: "Dienstag", isWeekend: false },
+    { key: "Mi", name: "Mittwoch", isWeekend: false },
+    { key: "Do", name: "Donnerstag", isWeekend: false },
+    { key: "Fr", name: "Freitag", isWeekend: false },
+    { key: "Sa", name: "Samstag", isWeekend: true },
+    { key: "So", name: "Sonntag", isWeekend: true }
+  ];
+
+  const OPTIONS = ["tbd.", "Julia", "Marco"];
+  const STORAGE_KEY = "wochenplan_julia_marco_v1";
+  const CLOUD_CFG_KEY = "wochenplan_jsonbin_cfg_v1";
+
+  let state = loadLocalState();
+  let cloudCfg = loadCloudConfig();
+  let availableWeeks = [];
+  let selectedWeekId = "";
+
+  function loadLocalState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveLocalState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {}
+  }
+
+  function loadCloudConfig() {
+    try {
+      const raw = localStorage.getItem(CLOUD_CFG_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function openSetupModal() {
+    if (cloudCfg) {
+      document.getElementById("binIdInput").value = cloudCfg.binId || "";
+      document.getElementById("apiKeyInput").value = cloudCfg.apiKey || "";
+    }
+    document.getElementById("setupError").style.display = "none";
+    document.getElementById("setupModal").classList.remove("hidden");
+  }
+
+  function closeSetupModal() {
+    document.getElementById("setupModal").classList.add("hidden");
+  }
+
+  async function connectJsonBin() {
+    const binId = document.getElementById("binIdInput").value.trim();
+    const apiKey = document.getElementById("apiKeyInput").value.trim();
+    const errEl = document.getElementById("setupError");
+    const btn = document.getElementById("saveCloudBtn");
+
+    if (!binId) {
+      errEl.textContent = "Bitte gib deine JSONbin Bin ID ein.";
+      errEl.style.display = "block";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Verbindung wird geprüft...";
+    errEl.style.display = "none";
+
+    cloudCfg = { binId, apiKey };
+    const ok = await syncFromCloud(false, true);
+
+    btn.disabled = false;
+    btn.textContent = "Verbinden & synchronisieren";
+
+    if (ok) {
+      localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify(cloudCfg));
+      closeSetupModal();
+      showToast("✓ Cloud-Sync aktiv! Änderungen werden geteilt.");
+    } else {
+      cloudCfg = loadCloudConfig();
+      errEl.textContent = "Verbindung fehlgeschlagen. Bitte prüfe die Bin ID (und falls privat, den X-Master-Key).";
+      errEl.style.display = "block";
+    }
+  }
+
+  function getJsonBinHeaders(includeContentType = false) {
+    const headers = {};
+    if (includeContentType) headers["Content-Type"] = "application/json";
+    if (cloudCfg && cloudCfg.apiKey) {
+      headers["X-Master-Key"] = cloudCfg.apiKey;
+    }
+    return headers;
+  }
+
+  async function syncFromCloud(showFeedback = false, isInitialTest = false) {
+    saveLocalState();
+    const statusEl = document.getElementById("saveStatus");
+
+    if (!cloudCfg || !cloudCfg.binId) {
+      if (showFeedback) {
+        openSetupModal();
+      } else {
+        statusEl.textContent = "✓ Lokal gespeichert";
+      }
+      return false;
+    }
+
+    statusEl.textContent = "⏳ Lade Stand...";
+    try {
+      const url = `https://api.jsonbin.io/v3/b/${encodeURIComponent(cloudCfg.binId)}/latest`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: getJsonBinHeaders(false)
+      });
+
+      if (!res.ok) {
+        statusEl.textContent = "⚠️ Sync-Fehler";
+        return false;
+      }
+
+      const data = await res.json();
+      const record = data.record || {};
+
+      // Falls es nur der initiale Start-Platzhalter {"test": "start"} ist, nicht überschreiben
+      if (!(Object.keys(record).length === 1 && record.test === "start")) {
+        state = record;
+        saveLocalState();
+        renderAll();
+      } else if (isInitialTest && Object.keys(state).length > 0) {
+        await syncToCloud(false);
+      }
+
+      const now = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      statusEl.textContent = `✓ Synchronisiert (${now})`;
+      if (showFeedback) showToast("✓ Aktueller Wochenplan geladen!");
+      return true;
+    } catch (e) {
+      statusEl.textContent = "⚠️ Offline (Lokal aktiv)";
+      if (showFeedback) showToast("⚠️ Keine Verbindung zur Cloud.");
+      return false;
+    }
+  }
+
+  async function syncToCloud(showFeedback = false) {
+    saveLocalState();
+    const statusEl = document.getElementById("saveStatus");
+    const now = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+    if (!cloudCfg || !cloudCfg.binId) {
+      statusEl.textContent = `✓ Lokal gespeichert (${now})`;
+      if (showFeedback) showToast("✓ Lokal im Browser gespeichert!");
+      return true;
+    }
+
+    statusEl.textContent = "⏳ Speichere...";
+    try {
+      const url = `https://api.jsonbin.io/v3/b/${encodeURIComponent(cloudCfg.binId)}`;
+      const payload = Object.keys(state).length > 0 ? state : { _empty: true };
+
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: getJsonBinHeaders(true),
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        statusEl.textContent = "⚠️ Cloud-Speicherfehler";
+        if (showFeedback) showToast("⚠️ Fehler beim Cloud-Speichern (Lokal gesichert).");
+        return false;
+      }
+
+      statusEl.textContent = `✓ Gespeichert (${now})`;
+      if (showFeedback) showToast("✓ Für Julia & Marco gespeichert!");
+      return true;
+    } catch (e) {
+      statusEl.textContent = `✓ Lokal gesichert (${now})`;
+      if (showFeedback) showToast("⚠️ Offline – lokal gespeichert.");
+      return false;
+    }
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2500);
+  }
+
+  function getISOWeekData(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    const isoYear = d.getUTCFullYear();
+
+    const monday = new Date(date);
+    const currentDay = monday.getDay() || 7;
+    monday.setDate(monday.getDate() - currentDay + 1);
+    monday.setHours(0, 0, 0, 0);
+
+    return { year: isoYear, week: weekNo, monday };
+  }
+
+  function formatShortDate(date) {
+    return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  }
+
+  function initWeeks() {
+    const today = new Date();
+    const offsets = [-2, -1, 0, 1, 2];
+    const select = document.getElementById("kwSelect");
+    select.innerHTML = "";
+
+    availableWeeks = offsets.map(offset => {
+      const refDate = new Date(today);
+      refDate.setDate(today.getDate() + offset * 7);
+      const info = getISOWeekData(refDate);
+      const sunday = new Date(info.monday);
+      sunday.setDate(info.monday.getDate() + 6);
+
+      const id = `${info.year}-KW${String(info.week).padStart(2, "0")}`;
+      let tag = "";
+      if (offset === 0) tag = " (Aktuelle Woche)";
+      if (offset === 1) tag = " (Folgewoche)";
+
+      const label = `KW ${info.week} (${formatShortDate(info.monday)} – ${formatShortDate(sunday)})${tag}`;
+      return { id, week: info.week, year: info.year, monday: info.monday, sunday, label, offset };
+    });
+
+    availableWeeks.forEach(w => {
+      const opt = document.createElement("option");
+      opt.value = w.id;
+      opt.textContent = w.label;
+      select.appendChild(opt);
+    });
+
+    const defaultWeek = availableWeeks.find(w => w.offset === 1) || availableWeeks[2];
+    selectedWeekId = defaultWeek.id;
+    select.value = selectedWeekId;
+
+    select.addEventListener("change", (e) => {
+      selectedWeekId = e.target.value;
+      renderAll();
+    });
+  }
+
+  function getAssignment(weekId, dayKey, taskName) {
+    return state?.[weekId]?.[dayKey]?.[taskName] || "tbd.";
+  }
+
+  function setAssignment(weekId, dayKey, taskName, value) {
+    if (!state[weekId]) state[weekId] = {};
+    if (!state[weekId][dayKey]) state[weekId][dayKey] = {};
+    state[weekId][dayKey][taskName] = value;
+    renderAll();
+    syncToCloud(false);
+  }
+
+  function resetCurrentWeek() {
+    if (!confirm("Möchtest du wirklich alle Zuweisungen dieser Kalenderwoche auf 'tbd.' zurücksetzen?")) return;
+    delete state[selectedWeekId];
+    renderAll();
+    syncToCloud(true);
+  }
+
+  function renderPlanView() {
+    const grid = document.getElementById("daysGrid");
+    grid.innerHTML = "";
+    const weekObj = availableWeeks.find(w => w.id === selectedWeekId);
+
+    DAYS.forEach((day, idx) => {
+      const dayDate = new Date(weekObj.monday);
+      dayDate.setDate(weekObj.monday.getDate() + idx);
+
+      const card = document.createElement("div");
+      card.className = "day-card";
+
+      const header = document.createElement("div");
+      header.className = "day-header";
+      header.innerHTML = `<span>${day.name}</span><span class="day-date">${formatShortDate(dayDate)}.</span>`;
+      card.appendChild(header);
+
+      const list = document.createElement("div");
+      list.className = "task-list";
+
+      const tasks = day.isWeekend ? WEEKEND_TASKS : WEEKDAY_TASKS;
+      tasks.forEach(task => {
+        const currentVal = getAssignment(selectedWeekId, day.key, task);
+        const row = document.createElement("div");
+        const safeClass = currentVal === "tbd." ? "tbd" : currentVal;
+        row.className = `task-row assigned-${safeClass}`;
+
+        const label = document.createElement("span");
+        label.className = "task-name";
+        label.textContent = task;
+
+        const select = document.createElement("select");
+        select.className = "task-select";
+        OPTIONS.forEach(optVal => {
+          const opt = document.createElement("option");
+          opt.value = optVal;
+          opt.textContent = optVal;
+          if (optVal === currentVal) opt.selected = true;
+          select.appendChild(opt);
+        });
+
+        select.addEventListener("change", (e) => {
+          setAssignment(selectedWeekId, day.key, task, e.target.value);
+        });
+
+        row.appendChild(label);
+        row.appendChild(select);
+        list.appendChild(row);
+      });
+
+      card.appendChild(list);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderOverview() {
+    const weekObj = availableWeeks.find(w => w.id === selectedWeekId);
+    document.getElementById("overviewTitle").textContent = `Wochenplan – KW ${weekObj.week} (${weekObj.year})`;
+    document.getElementById("overviewSubtitle").textContent = `${formatShortDate(weekObj.monday)}. – ${formatShortDate(weekObj.sunday)}.`;
+
+    const table = document.getElementById("overviewTable");
+    table.innerHTML = "";
+
+    const thead = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    const thTask = document.createElement("th");
+    thTask.className = "task-col";
+    thTask.textContent = "Aufgabe / Task";
+    headRow.appendChild(thTask);
+
+    DAYS.forEach((day, idx) => {
+      const d = new Date(weekObj.monday);
+      d.setDate(weekObj.monday.getDate() + idx);
+      const th = document.createElement("th");
+      th.innerHTML = `${day.key}<br><small style="font-weight:400;opacity:0.85;">${formatShortDate(d)}.</small>`;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+    ALL_UNIQUE_TASKS.forEach(task => {
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      tdName.className = "task-col";
+      tdName.textContent = task;
+      tr.appendChild(tdName);
+
+      DAYS.forEach(day => {
+        const td = document.createElement("td");
+        const activeTasks = day.isWeekend ? WEEKEND_TASKS : WEEKDAY_TASKS;
+        if (!activeTasks.includes(task)) {
+          td.className = "cell-empty";
+          td.textContent = "—";
+        } else {
+          const val = getAssignment(selectedWeekId, day.key, task);
+          const safeClass = val === "tbd." ? "tbd" : val;
+          td.className = `cell-${safeClass}`;
+          td.textContent = val;
+        }
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+  }
+
+  function renderStats() {
+    let marcoCount = 0;
+    let juliaCount = 0;
+    let tbdCount = 0;
+
+    DAYS.forEach(day => {
+      const tasks = day.isWeekend ? WEEKEND_TASKS : WEEKDAY_TASKS;
+      tasks.forEach(task => {
+        const val = getAssignment(selectedWeekId, day.key, task);
+        if (val === "Marco") marcoCount++;
+        else if (val === "Julia") juliaCount++;
+        else tbdCount++;
+      });
+    });
+
+    document.getElementById("statsPills").innerHTML = `
+      <span class="pill pill-marco">Marco: ${marcoCount}</span>
+      <span class="pill pill-julia">Julia: ${juliaCount}</span>
+      <span class="pill pill-tbd">Offen (tbd.): ${tbdCount}</span>
+    `;
+  }
+
+  function switchTab(tab) {
+    const viewPlan = document.getElementById("viewPlan");
+    const viewOverview = document.getElementById("viewOverview");
+    const tabPlan = document.getElementById("tabPlan");
+    const tabOverview = document.getElementById("tabOverview");
+
+    if (tab === "plan") {
+      viewPlan.classList.remove("hidden");
+      viewOverview.classList.add("hidden");
+      tabPlan.classList.add("active");
+      tabOverview.classList.remove("active");
+    } else {
+      viewPlan.classList.add("hidden");
+      viewOverview.classList.remove("hidden");
+      tabPlan.classList.remove("active");
+      tabOverview.classList.add("active");
+      renderOverview();
+    }
+  }
+
+  function downloadPDF() {
+    const weekObj = availableWeeks.find(w => w.id === selectedWeekId);
+    const element = document.getElementById("exportArea");
+    const filename = `Wochenplan_KW${weekObj.week}_${weekObj.year}.pdf`;
+
+    if (typeof html2pdf !== "undefined") {
+      const prevScrollLeft = element.scrollLeft;
+      element.scrollLeft = 0;
+      element.classList.add("export-mode");
+
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 1100
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+        pagebreak: { mode: ["avoid-all"] }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          element.classList.remove("export-mode");
+          element.scrollLeft = prevScrollLeft;
+        })
+        .catch(() => {
+          element.classList.remove("export-mode");
+          element.scrollLeft = prevScrollLeft;
+        });
+    } else {
+      window.print();
+    }
+  }
+
+  function downloadJPG() {
+    const weekObj = availableWeeks.find(w => w.id === selectedWeekId);
+    const element = document.getElementById("exportArea");
+    const filename = `Wochenplan_KW${weekObj.week}_${weekObj.year}.jpg`;
+
+    if (typeof html2canvas !== "undefined") {
+      const prevScrollLeft = element.scrollLeft;
+      element.scrollLeft = 0;
+      element.classList.add("export-mode");
+
+      html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1100
+      })
+        .then((canvas) => {
+          element.classList.remove("export-mode");
+          element.scrollLeft = prevScrollLeft;
+
+          const link = document.createElement("a");
+          link.download = filename;
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast("✓ JPG-Übersicht heruntergeladen!");
+        })
+        .catch(() => {
+          element.classList.remove("export-mode");
+          element.scrollLeft = prevScrollLeft;
+          showToast("⚠️ Fehler beim Erstellen des JPGs.");
+        });
+    } else {
+      showToast("⚠️ JPG-Export benötigt eine Internetverbindung.");
+    }
+  }
+
+  function renderAll() {
+    renderStats();
+    renderPlanView();
+    renderOverview();
+  }
+
+  initWeeks();
+  renderAll();
+
+  if (cloudCfg && cloudCfg.binId) {
+    syncFromCloud(false);
+  }
+</script>
+</body>
+</html>
