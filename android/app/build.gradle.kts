@@ -11,8 +11,18 @@ android {
         applicationId = "de.wochenplan.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
+    }
+
+    // Feste Signatur, damit Updates ohne Deinstallation installierbar sind.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("wochenplan.keystore")
+            storePassword = "wochenplan"
+            keyAlias = "wochenplan"
+            keyPassword = "wochenplan"
+        }
     }
 
     compileOptions {

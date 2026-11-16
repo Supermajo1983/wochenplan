@@ -63,19 +63,28 @@ object Plan {
 
     fun todayTitle(today: LocalDate = LocalDate.now()): String {
         val name = today.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.GERMANY)
-        return "Heute · %s %02d.%02d.".format(name, today.dayOfMonth, today.monthValue)
+        return "🏡 %s %02d.%02d.".format(name, today.dayOfMonth, today.monthValue)
     }
 
-    fun todayLines(record: JSONObject?, today: LocalDate = LocalDate.now()): List<String> {
+    class Today(val marco: List<String>, val julia: List<String>, val open: List<String>)
+
+    fun todayAssignments(record: JSONObject?, today: LocalDate = LocalDate.now()): Today {
         val weekId = "%d-KW%02d".format(
             today.get(IsoFields.WEEK_BASED_YEAR), today.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
         )
         val dayKey = DAY_KEYS[today.dayOfWeek.value - 1]
         val weekend = today.dayOfWeek == DayOfWeek.SATURDAY || today.dayOfWeek == DayOfWeek.SUNDAY
         val day = record?.optJSONObject(weekId)?.optJSONObject(dayKey)
-        return (if (weekend) WEEKEND_TASKS else WEEKDAY_TASKS).map { task ->
-            val who = day?.optString(task, "tbd.")?.ifBlank { "tbd." } ?: "tbd."
-            "• $task: ${if (who == "tbd.") "offen" else who}"
+        val marco = mutableListOf<String>()
+        val julia = mutableListOf<String>()
+        val open = mutableListOf<String>()
+        for (task in if (weekend) WEEKEND_TASKS else WEEKDAY_TASKS) {
+            when (day?.optString(task, "tbd.")) {
+                "Marco" -> marco.add(task)
+                "Julia" -> julia.add(task)
+                else -> open.add(task)
+            }
         }
+        return Today(marco, julia, open)
     }
 }
