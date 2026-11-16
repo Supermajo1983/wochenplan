@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wochenplan</string>
+    <string name="settings_title">Widget-Einstellungen</string>
+    <string name="widget_desc">Zeigt die Aufgaben des heutigen Tages</string>
+</resources>
